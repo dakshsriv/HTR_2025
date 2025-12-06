@@ -47,6 +47,10 @@ class TimerProvider extends ChangeNotifier {
       return Duration.zero;
     }
 
+    if (_currentStepIndex >= _activeTask!.microSteps.length) {
+      return Duration.zero;
+    }
+
     final step = _activeTask!.microSteps[_currentStepIndex];
     final stepSeconds = step.timeMinutes * 60;
     final elapsedSeconds = _currentStepDuration.inSeconds;
@@ -88,11 +92,9 @@ class TimerProvider extends ChangeNotifier {
     return _activeTask!.microSteps[_currentStepIndex].timeMinutes;
   }
 
-  /// Get whether we're currently in break time (not used if no microsteps)
+  /// Get whether we're currently in break time (not used - breaks removed)
   bool get isInBreakTime {
-    if (!hasMicrosteps) return false;
-    // Break happens after each step except the last one
-    return _currentStepIndex > 0 && _currentStepIndex % 2 == 1;
+    return false; // Breaks are no longer used in skip logic
   }
 
   /// Start timer for a task
@@ -158,50 +160,39 @@ class TimerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Advance to next step (or next break)
+  /// Advance to next step
   void _advanceToNextStep() {
     if (!hasMicrosteps) return;
 
-    // Move to next item (step or break)
+    // Move to next step
     _currentStepIndex++;
 
     // Check if we've completed all steps
-    if (_currentStepIndex >= _activeTask!.microSteps.length * 2 - 1) {
+    if (_currentStepIndex >= _activeTask!.microSteps.length) {
       // Task is complete, trigger completion dialog
       _completeTask(onTime: !isOvertime);
       return;
     }
 
-    // Reset step duration for next step/break
+    // Reset step duration for next step
     _currentStepDuration = Duration.zero;
     notifyListeners();
   }
 
-  /// Skip current step and move to next actual step (skipping any break)
-  void skipStep() {
-    if (!hasMicrosteps) return;
+  /// Skip current step and move to next (or return true if at last step)
+  bool skipStep() {
+    if (!hasMicrosteps) return false;
 
-    // Calculate the next step index (skip breaks)
-    int nextStepIndex;
-
-    if (_currentStepIndex % 2 == 0) {
-      // Currently on a step (even index), go to next step, skipping the break
-      nextStepIndex = _currentStepIndex + 2;
-    } else {
-      // Currently on a break (odd index), go to next step
-      nextStepIndex = _currentStepIndex + 1;
+    // Check if we're at the last step
+    if (_currentStepIndex >= _activeTask!.microSteps.length - 1) {
+      return true; // Signal that there are no more steps to skip to
     }
 
-    // Check if next step is a valid step index (even numbers are steps)
-    if (nextStepIndex >= _activeTask!.microSteps.length * 2) {
-      // Past all steps and breaks, task is complete
-      _completeTask(onTime: !isOvertime);
-      return;
-    }
-
-    _currentStepIndex = nextStepIndex;
+    // Move to next step
+    _currentStepIndex++;
     _currentStepDuration = Duration.zero;
     notifyListeners();
+    return false; // More steps available
   }
 
   /// Complete the task

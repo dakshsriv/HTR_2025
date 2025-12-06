@@ -214,7 +214,24 @@ class _TimerScreenState extends State<TimerScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               OutlinedButton.icon(
-                onPressed: () => timerProvider.skipStep(),
+                onPressed: () {
+                  final isLastStep = timerProvider.skipStep();
+                  if (isLastStep) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('No More Steps'),
+                        content: const Text('You\'re on the last step! Complete the task to finish.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
                 icon: const Icon(Icons.skip_next),
                 label: const Text('Skip Step'),
               ),
