@@ -59,7 +59,7 @@ class AnalyticsProvider extends ChangeNotifier {
       overtimeDistribution: overtimeData['distribution'] as Map<String, int>,
       estimatedAvgMinutes: estimationData['estimated'] as int,
       actualAvgMinutes: estimationData['actual'] as int,
-      estimationRatio: estimationData['ratio'] as double,
+      estimationPercentageDifference: estimationData['percentageDifference'] as double,
       hourlyDistribution: hourlyData,
       peakHour: peakHour,
       avgPerWeek: avgPerWeek,
@@ -176,7 +176,7 @@ class AnalyticsProvider extends ChangeNotifier {
       return {
         'estimated': 0,
         'actual': 0,
-        'ratio': 0.0,
+        'percentageDifference': 0.0,
       };
     }
 
@@ -186,12 +186,12 @@ class AnalyticsProvider extends ChangeNotifier {
 
     final estimatedAvg = 30; // Placeholder - would need to store in CompletionRecord
     final avgActual = estimatedAvg + (history.fold<int>(0, (sum, r) => sum + r.overtimeMinutes) ~/ history.length);
-    final ratio = estimatedAvg > 0 ? avgActual / estimatedAvg : 0.0;
+    final percentageDifference = estimatedAvg > 0 ? ((avgActual - estimatedAvg) / estimatedAvg) * 100 : 0.0;
 
     return {
       'estimated': estimatedAvg,
       'actual': avgActual,
-      'ratio': ratio,
+      'percentageDifference': percentageDifference,
     };
   }
 

@@ -267,7 +267,7 @@ class AnalyticsScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Your pattern: ${analytics.estimationRatio.toStringAsFixed(1)}x longer than estimated',
+                                _getEstimationText(analytics.estimationPercentageDifference),
                                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                       color: Colors.teal.shade700,
                                       fontWeight: FontWeight.w600,
@@ -319,5 +319,16 @@ class AnalyticsScreen extends StatelessWidget {
         );
       }).toList(),
     );
+  }
+
+  /// Get estimation text showing percentage difference
+  String _getEstimationText(double percentageDifference) {
+    if (percentageDifference == 0.0) {
+      return 'Your pattern: Perfect! You estimate accurately';
+    } else if (percentageDifference > 0) {
+      return 'Your pattern: +${percentageDifference.toStringAsFixed(0)}% longer than estimated';
+    } else {
+      return 'Your pattern: ${percentageDifference.toStringAsFixed(0)}% shorter than estimated';
+    }
   }
 }

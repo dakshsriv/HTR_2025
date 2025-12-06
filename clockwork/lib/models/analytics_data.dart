@@ -23,7 +23,7 @@ class AnalyticsData {
   // Time estimation
   final int estimatedAvgMinutes; // Average estimated time
   final int actualAvgMinutes; // Average actual time spent
-  final double estimationRatio; // Actual / Estimated (e.g., 1.4)
+  final double estimationPercentageDifference; // Percentage difference from estimated (e.g., +15 = 15% longer, -5 = 5% shorter)
 
   // Peak hours
   final Map<String, int> hourlyDistribution; // "10-12" → count, "14-16" → count
@@ -46,7 +46,7 @@ class AnalyticsData {
     required this.overtimeDistribution,
     required this.estimatedAvgMinutes,
     required this.actualAvgMinutes,
-    required this.estimationRatio,
+    required this.estimationPercentageDifference,
     required this.hourlyDistribution,
     required this.peakHour,
     required this.avgPerWeek,
@@ -68,7 +68,7 @@ class AnalyticsData {
       overtimeDistribution: {'0': 0, '5-15': 0, '15+': 0},
       estimatedAvgMinutes: 0,
       actualAvgMinutes: 0,
-      estimationRatio: 0.0,
+      estimationPercentageDifference: 0.0,
       hourlyDistribution: {},
       peakHour: 'N/A',
       avgPerWeek: 0,

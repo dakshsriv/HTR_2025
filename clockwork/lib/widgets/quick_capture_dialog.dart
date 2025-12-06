@@ -31,6 +31,7 @@ class _QuickCaptureDialogState extends State<QuickCaptureDialog> {
   late List<TextEditingController> _stepTimeControllers;
   late FocusNode _titleFocusNode;
   late FocusNode _timesFocusNode;
+  late DateTime _selectedDueDate;
 
   static const int _minSteps = 3;
   static const int _maxSteps = 5;
@@ -44,6 +45,8 @@ class _QuickCaptureDialogState extends State<QuickCaptureDialog> {
     _timesFocusNode = FocusNode();
     _stepTitleControllers = [];
     _stepTimeControllers = [];
+    // Default due date: tomorrow
+    _selectedDueDate = DateTime.now().add(const Duration(days: 1));
     // Auto-focus the title field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_titleFocusNode);
