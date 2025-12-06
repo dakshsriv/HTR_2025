@@ -4,6 +4,7 @@ import '../providers/task_provider.dart';
 import '../widgets/quick_capture_dialog.dart';
 import '../widgets/right_now_display.dart';
 import '../widgets/task_list_view.dart';
+import 'analytics_screen.dart';
 
 /// Home screen - main entry point of the app.
 ///
@@ -73,6 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Tasks',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Analytics',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
@@ -97,6 +102,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return const TaskListView();
       case 2:
+        return const AnalyticsScreen();
+      case 3:
         return _SettingsTab(
           onThemeToggle: widget.onThemeToggle,
           isDarkMode: widget.isDarkMode,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'services/preferences_service.dart';
 import 'providers/task_provider.dart';
 import 'providers/timer_provider.dart';
+import 'providers/analytics_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
@@ -21,6 +22,9 @@ void main() async {
         ),
         ChangeNotifierProvider<TimerProvider>(
           create: (_) => TimerProvider(),
+        ),
+        ChangeNotifierProvider<AnalyticsProvider>(
+          create: (_) => AnalyticsProvider(prefsService: prefsService),
         ),
       ],
       child: const MainApp(),

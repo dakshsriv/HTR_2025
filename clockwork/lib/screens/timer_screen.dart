@@ -4,6 +4,7 @@ import '../models/task.dart';
 import '../models/completion_record.dart';
 import '../providers/task_provider.dart';
 import '../providers/timer_provider.dart';
+import '../providers/analytics_provider.dart';
 import '../services/preferences_service.dart';
 import '../widgets/timer_dial.dart';
 
@@ -282,6 +283,7 @@ class _TimerScreenState extends State<TimerScreen> {
   void _handleCompleted(BuildContext context, TimerProvider timerProvider) {
     final prefsService = context.read<PreferencesService>();
     final taskProvider = context.read<TaskProvider>();
+    final analyticsProvider = context.read<AnalyticsProvider>();
 
     // Save completion record
     final completionRecord = CompletionRecord(
@@ -296,6 +298,9 @@ class _TimerScreenState extends State<TimerScreen> {
 
     // Mark task as completed in task provider
     taskProvider.completeTask(widget.task.id);
+
+    // Refresh analytics with new completion data
+    analyticsProvider.refreshAnalytics();
 
     timerProvider.clearTimer();
     if (mounted) {
