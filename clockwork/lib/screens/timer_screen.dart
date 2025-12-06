@@ -110,47 +110,64 @@ class _TimerScreenState extends State<TimerScreen> {
     );
   }
 
-  /// Build dual timer UI (task + step/break)
+  /// Build dual timer UI (task + step/break) - side by side
   Widget _buildDualTimerUI(BuildContext context, TimerProvider timerProvider) {
-    return Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Task total timer
-        Text(
-          'Total Task Time',
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+        // Left: Task total timer
+        Expanded(
+          child: Column(
+            children: [
+              Text(
+                'Total Task Time',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                textAlign: TextAlign.center,
               ),
-        ),
-        const SizedBox(height: 16),
-        TimerDial(
-          timeRemaining: timerProvider.taskTimeRemaining,
-          totalTime: Duration(minutes: timerProvider.totalTaskMinutes),
-          label: 'Total',
-          isOvertime: timerProvider.isOvertime,
-        ),
-        const SizedBox(height: 40),
-
-        // Current step/break timer
-        Text(
-          timerProvider.isInBreakTime ? 'Break Time' : 'Current Step',
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 16),
+              TimerDial(
+                timeRemaining: timerProvider.taskTimeRemaining,
+                totalTime: Duration(minutes: timerProvider.totalTaskMinutes),
+                label: 'Total',
+                isOvertime: timerProvider.isOvertime,
               ),
-        ),
-        const SizedBox(height: 8),
-        if (!timerProvider.isInBreakTime && timerProvider.currentStepName.isNotEmpty)
-          Text(
-            timerProvider.currentStepName,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade600,
-                ),
+            ],
           ),
-        const SizedBox(height: 16),
-        TimerDial(
-          timeRemaining: timerProvider.stepTimeRemaining,
-          totalTime: Duration(minutes: timerProvider.currentStepMinutes),
-          label: timerProvider.isInBreakTime ? 'Break' : 'Step',
-          isOvertime: false,
+        ),
+        const SizedBox(width: 16),
+
+        // Right: Current step/break timer
+        Expanded(
+          child: Column(
+            children: [
+              Text(
+                timerProvider.isInBreakTime ? 'Break Time' : 'Current Step',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              if (!timerProvider.isInBreakTime && timerProvider.currentStepName.isNotEmpty)
+                Text(
+                  timerProvider.currentStepName,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey.shade600,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              const SizedBox(height: 16),
+              TimerDial(
+                timeRemaining: timerProvider.stepTimeRemaining,
+                totalTime: Duration(minutes: timerProvider.currentStepMinutes),
+                label: timerProvider.isInBreakTime ? 'Break' : 'Step',
+                isOvertime: false,
+              ),
+            ],
+          ),
         ),
       ],
     );
