@@ -31,10 +31,19 @@ class TaskProvider extends ChangeNotifier {
   List<Course> get courses => _courses;
   UserSettings get settings => _settings;
 
-  /// Get incomplete tasks sorted by most recent first.
-  List<Task> get incompleteTasks =>
-      _tasks.where((t) => !t.isCompleted).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  /// Get incomplete tasks sorted by closest due date first.
+  List<Task> get incompleteTasks {
+    final incomplete = _tasks.where((t) => !t.isCompleted).toList();
+    incomplete.sort((a, b) {
+      // Handle null due dates (no deadline = put at end)
+      if (a.dueDate == null && b.dueDate == null) return 0;
+      if (a.dueDate == null) return 1; // a has no due date, put it after b
+      if (b.dueDate == null) return -1; // b has no due date, put it after a
+      // Both have due dates: sort by closest first
+      return a.dueDate!.compareTo(b.dueDate!);
+    });
+    return incomplete;
+  }
 
   /// Get the next task to display in "Right Now" view.
   /// Returns the oldest incomplete task that should be worked on now.

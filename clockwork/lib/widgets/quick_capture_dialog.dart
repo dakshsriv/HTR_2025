@@ -45,8 +45,9 @@ class _QuickCaptureDialogState extends State<QuickCaptureDialog> {
     _timesFocusNode = FocusNode();
     _stepTitleControllers = [];
     _stepTimeControllers = [];
-    // Default due date: tomorrow
-    _selectedDueDate = DateTime.now().add(const Duration(days: 1));
+    // Default due date: tomorrow at 11:59 AM
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    _selectedDueDate = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 11, 59);
     // Auto-focus the title field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_titleFocusNode);
@@ -100,6 +101,26 @@ class _QuickCaptureDialogState extends State<QuickCaptureDialog> {
     return total;
   }
 
+  /// Format date and time for display
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final tomorrowOnly = DateTime(tomorrow.year, tomorrow.month, tomorrow.day);
+
+    String dateStr;
+    if (dateOnly == DateTime(now.year, now.month, now.day)) {
+      dateStr = 'Today';
+    } else if (dateOnly == tomorrowOnly) {
+      dateStr = 'Tomorrow';
+    } else {
+      dateStr = '${date.month}/${date.day}/${date.year}';
+    }
+
+    final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    return '$dateStr at $timeStr';
+  }
+
   /// Submit the task - requires title and estimated time only.
   /// Micro-steps will be set up in a separate dialog if needed.
   Future<void> _submitTask() async {
@@ -124,13 +145,10 @@ class _QuickCaptureDialogState extends State<QuickCaptureDialog> {
     }
 
     final taskProvider = context.read<TaskProvider>();
-    // Set due date to 8 hours from now so task appears immediately in "Right Now"
-    final now = DateTime.now();
-    final dueDate = now.add(const Duration(hours: 8));
 
     await taskProvider.addTask(
       title: title,
-      dueDate: dueDate,
+      dueDate: _selectedDueDate,
       estimatedMinutes: estimatedMinutes,
     );
 
@@ -218,6 +236,50 @@ class _QuickCaptureDialogState extends State<QuickCaptureDialog> {
                 textInputAction: TextInputAction.done,
                 onChanged: (_) => setState(() {}),
                 style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+
+              // Due date picker
+              Text(
+                'When is it due? (required)',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDueDate,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (pickedDate != null) {
+                    // Now pick the time
+                    if (mounted) {
+                      final pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(_selectedDueDate),
+                      );
+                      if (pickedTime != null) {
+                        setState(() {
+                          _selectedDueDate = DateTime(
+                            pickedDate.year,
+                            pickedDate.month,
+                            pickedDate.day,
+                            pickedTime.hour,
+                            pickedTime.minute,
+                          );
+                        });
+                      }
+                    }
+                  }
+                },
+                icon: const Icon(Icons.calendar_today),
+                label: Text(
+                  _formatDate(_selectedDueDate),
+                ),
               ),
               const SizedBox(height: 12),
 

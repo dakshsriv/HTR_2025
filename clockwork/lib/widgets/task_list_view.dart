@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
+import '../providers/timer_provider.dart';
 
 /// Task List View - Displays all tasks with completion and deletion.
 ///
@@ -14,8 +15,45 @@ class TaskListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TaskProvider>(
-      builder: (context, taskProvider, _) {
+    return Consumer2<TaskProvider, TimerProvider>(
+      builder: (context, taskProvider, timerProvider, _) {
+        final activeTask = timerProvider.activeTask;
+
+        // If no active task, show idle message
+        if (activeTask == null) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.pause_circle_outline,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No task being completed right now',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Go to Home and click "Do this" on a task to get started',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final tasks = taskProvider.incompleteTasks;
 
         if (tasks.isEmpty) {

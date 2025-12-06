@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
+import '../providers/timer_provider.dart';
 import '../widgets/quick_capture_dialog.dart';
 import '../widgets/right_now_display.dart';
 import '../widgets/task_list_view.dart';
+import '../widgets/due_date_progress_bar.dart';
 import 'analytics_screen.dart';
 
 /// Home screen - main entry point of the app.
@@ -184,30 +186,58 @@ class _HomeTab extends StatelessWidget {
                   final course = taskProvider.getCourse(task.courseId);
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8.0),
-                    child: ListTile(
-                      leading: Checkbox(
-                        value: task.isCompleted,
-                        onChanged: (value) {
-                          if (value == true) {
-                            taskProvider.completeTask(task.id);
-                          }
-                        },
+                    child: Padding(
+                      padding: const EdgeInsets.all(0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ListTile(
+                            leading: Checkbox(
+                              value: task.isCompleted,
+                              onChanged: (value) {
+                                if (value == true) {
+                                  taskProvider.completeTask(task.id);
+                                }
+                              },
+                            ),
+                            title: Text(
+                              task.title,
+                              style: TextStyle(
+                                decoration: task.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                            subtitle: course != null
+                                ? Chip(
+                                    label: Text(course.name),
+                                    backgroundColor: course.color.withOpacity(0.3),
+                                    labelStyle: TextStyle(color: course.color),
+                                  )
+                                : null,
+                            trailing: ElevatedButton(
+                              onPressed: () {
+                                context.read<TimerProvider>().switchTask(task);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Now working on: ${task.title}'),
+                                    duration: const Duration(milliseconds: 1200),
+                                  ),
+                                );
+                              },
+                              child: const Text('Do this'),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: DueDateProgressBar(
+                              createdAt: task.createdAt,
+                              dueDate: task.dueDate,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                       ),
-                      title: Text(
-                        task.title,
-                        style: TextStyle(
-                          decoration: task.isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                      ),
-                      subtitle: course != null
-                          ? Chip(
-                              label: Text(course.name),
-                              backgroundColor: course.color.withOpacity(0.3),
-                              labelStyle: TextStyle(color: course.color),
-                            )
-                          : null,
                     ),
                   );
                 },

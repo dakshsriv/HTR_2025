@@ -204,6 +204,12 @@ class TimerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Switch to a new task, clearing the previous one
+  void switchTask(Task newTask) {
+    clearTimer();
+    startTimer(newTask);
+  }
+
   /// Clear the active timer (user switched to different task)
   void clearTimer() {
     _activeTask = null;
