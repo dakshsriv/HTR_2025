@@ -159,9 +159,14 @@ class _HomeTab extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
-          Consumer<TaskProvider>(
-            builder: (context, taskProvider, _) {
-              final upcomingTasks = taskProvider.incompleteTasks.take(5).toList();
+          Consumer2<TaskProvider, TimerProvider>(
+            builder: (context, taskProvider, timerProvider, _) {
+              final activeTaskId = timerProvider.activeTask?.id;
+              // Exclude the currently active task from upcoming tasks list
+              final upcomingTasks = taskProvider.incompleteTasks
+                  .where((t) => t.id != activeTaskId)
+                  .take(5)
+                  .toList();
               if (upcomingTasks.isEmpty) {
                 return Card(
                   child: Padding(
