@@ -60,10 +60,19 @@ class TaskListView extends StatelessWidget {
             final isAging = task.isAging();
             final opacity = task.getAgingOpacity();
 
+            final isOverdue = task.dueDate != null &&
+                DateTime.now().isAfter(task.dueDate!) &&
+                !task.isCompleted;
+
             return Opacity(
               opacity: opacity,
               child: Card(
                 margin: const EdgeInsets.only(bottom: 12.0),
+                color: isOverdue
+                    ? Theme.of(context).brightness == Brightness.dark
+                        ? Colors.red.shade900
+                        : Colors.red.shade50
+                    : null,
                 child: ListTile(
                   leading: Checkbox(
                     value: task.isCompleted,
@@ -80,6 +89,7 @@ class TaskListView extends StatelessWidget {
                           ? TextDecoration.lineThrough
                           : null,
                       color: isAging ? Colors.grey : null,
+                      fontWeight: isOverdue ? FontWeight.w600 : null,
                     ),
                   ),
                   subtitle: Column(
@@ -114,20 +124,52 @@ class TaskListView extends StatelessWidget {
                                 side: BorderSide(color: course.color),
                               ),
                             ),
-                          // Due date
+                          // Due date with overdue indicator
                           if (task.dueDate != null)
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: Text(
-                                'Due: ${task.dueDate.toString().split(' ')[0]}',
+                                isOverdue
+                                    ? 'OVERDUE'
+                                    : 'Due: ${task.dueDate.toString().split(' ')[0]}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade600,
+                                  color: isOverdue
+                                      ? Colors.red
+                                      : Colors.grey.shade600,
+                                  fontWeight: isOverdue
+                                      ? FontWeight.w600
+                                      : null,
                                 ),
                               ),
                             ),
                         ],
                       ),
+                      // Re-Roll button for overdue tasks
+                      if (isOverdue)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12.0),
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text('Need a Re-Roll?'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade600,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                            ),
+                            onPressed: () {
+                              taskProvider.rerollTask(task.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('✓ Rescheduled for tomorrow'),
+                                  duration: Duration(milliseconds: 1200),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                     ],
                   ),
                   trailing: PopupMenuButton(

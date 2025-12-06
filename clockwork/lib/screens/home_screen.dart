@@ -12,8 +12,20 @@ import '../widgets/task_list_view.dart';
 /// - Right Now task display
 /// - Task list view
 /// - Navigation to settings/courses
+/// - Theme toggle
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback onThemeToggle;
+  final bool isDarkMode;
+  final Function(double) onTextScaleChange;
+  final double textScale;
+
+  const HomeScreen({
+    required this.onThemeToggle,
+    required this.isDarkMode,
+    required this.onTextScaleChange,
+    required this.textScale,
+    super.key,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -26,9 +38,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flow Anchor'),
+        title: const Text('Clockwork: Stop Planning, Start Doing'),
         elevation: 0,
         centerTitle: true,
+        actions: [
+          // Theme toggle button
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              icon: Icon(
+                widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              ),
+              onPressed: widget.onThemeToggle,
+              tooltip: widget.isDarkMode ? 'Light Mode' : 'Dark Mode',
+            ),
+          ),
+        ],
       ),
       body: _buildBody(),
       bottomNavigationBar: BottomNavigationBar(
@@ -48,23 +73,19 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Tasks',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.school),
-            label: 'Courses',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
         ],
       ),
-      // Quick Capture button - always available
+      // Quick Capture button - positioned above bottom nav
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showQuickCaptureDialog,
         icon: const Icon(Icons.add),
         label: const Text('Quick Add'),
         tooltip: 'Quickly capture a new task',
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -76,9 +97,12 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return const TaskListView();
       case 2:
-        return const _CoursesTab();
-      case 3:
-        return const _SettingsTab();
+        return _SettingsTab(
+          onThemeToggle: widget.onThemeToggle,
+          isDarkMode: widget.isDarkMode,
+          onTextScaleChange: widget.onTextScaleChange,
+          textScale: widget.textScale,
+        );
       default:
         return const _HomeTab();
     }
@@ -88,7 +112,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showQuickCaptureDialog() {
     showDialog(
       context: context,
-      builder: (context) => const QuickCaptureDialog(),
+      builder: (context) => QuickCaptureDialog(
+        onTaskAdded: () {
+          // Automatically switch to Home tab after adding a task
+          setState(() {
+            _selectedNavIndex = 0;
+          });
+        },
+      ),
     );
   }
 }
@@ -182,54 +213,218 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-/// Courses tab - placeholder for course management.
-class _CoursesTab extends StatelessWidget {
-  const _CoursesTab();
+/// Settings tab - Manage app theme and text size.
+class _SettingsTab extends StatefulWidget {
+  final VoidCallback onThemeToggle;
+  final bool isDarkMode;
+  final Function(double) onTextScaleChange;
+  final double textScale;
+
+  const _SettingsTab({
+    required this.onThemeToggle,
+    required this.isDarkMode,
+    required this.onTextScaleChange,
+    required this.textScale,
+  });
+
+  @override
+  State<_SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends State<_SettingsTab> {
+  late double _tempTextScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempTextScale = widget.textScale;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.school, size: 48, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Text('Course Management'),
-          const SizedBox(height: 8),
+          // Appearance section
           Text(
-            'Coming soon',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey,
+            'Appearance',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
+          ),
+          const SizedBox(height: 16),
+
+          // Theme toggle
+          Card(
+            child: ListTile(
+              leading: Icon(
+                widget.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+              ),
+              title: const Text('Dark Mode'),
+              subtitle: Text(
+                widget.isDarkMode ? 'Enabled' : 'Disabled',
+              ),
+              trailing: Switch(
+                value: widget.isDarkMode,
+                onChanged: (_) => widget.onThemeToggle(),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Text Size section
+          Text(
+            'Text Size',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+
+          // Text size slider with preview
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Preview text with temporary scale
+                  Text(
+                    'Preview: This is how your text will look',
+                    textScaleFactor: _tempTextScale,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Slider - only updates preview, not global
+                  Row(
+                    children: [
+                      const Icon(Icons.text_decrease),
+                      Expanded(
+                        child: Slider(
+                          value: _tempTextScale,
+                          min: 0.8,
+                          max: 1.5,
+                          divisions: 7,
+                          label: '${(_tempTextScale * 100).toStringAsFixed(0)}%',
+                          onChanged: (value) {
+                            setState(() {
+                              _tempTextScale = value;
+                            });
+                          },
+                        ),
+                      ),
+                      const Icon(Icons.text_increase),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Show current setting and temp setting
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Current: ${(widget.textScale * 100).toStringAsFixed(0)}%',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            'Preview: ${(_tempTextScale * 100).toStringAsFixed(0)}% (${_getTempTextSizeLabel()})',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Save button
+                      if (_tempTextScale != widget.textScale)
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.check),
+                          label: const Text('Save'),
+                          onPressed: () {
+                            widget.onTextScaleChange(_tempTextScale);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Text size updated'),
+                                duration: Duration(milliseconds: 1200),
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // App info section
+          Text(
+            'About',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Clockwork: Stop Planning, Start Doing',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'A task management app designed for ADHD-I students.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Version 1.0.0',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                        ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
-}
 
-/// Settings tab - placeholder for app settings.
-class _SettingsTab extends StatelessWidget {
-  const _SettingsTab();
+  /// Get human-readable text size label for current global setting.
+  String _getTextSizeLabel() {
+    if (widget.textScale < 0.9) return 'Small';
+    if (widget.textScale < 1.1) return 'Normal';
+    if (widget.textScale < 1.3) return 'Large';
+    return 'Extra Large';
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.settings, size: 48, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Text('Settings'),
-          const SizedBox(height: 8),
-          Text(
-            'Coming soon',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey,
-                ),
-          ),
-        ],
-      ),
-    );
+  /// Get human-readable text size label for temporary preview setting.
+  String _getTempTextSizeLabel() {
+    if (_tempTextScale < 0.9) return 'Small';
+    if (_tempTextScale < 1.1) return 'Normal';
+    if (_tempTextScale < 1.3) return 'Large';
+    return 'Extra Large';
   }
 }

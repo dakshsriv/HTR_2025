@@ -37,12 +37,23 @@ class TaskProvider extends ChangeNotifier {
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   /// Get the next task to display in "Right Now" view.
-  /// Returns the oldest incomplete task that is due NOW (not snoozed).
-  /// Filters out tasks with future due dates (snoozed tasks).
+  /// Returns the oldest incomplete task that should be worked on now.
+  /// Shows newly created tasks (8 hour window) but hides snoozed tasks (>24 hours in future).
   Task? get nextActiveTask {
     final now = DateTime.now();
+    final oneDay = Duration(hours: 24);
+
+    // Show tasks that are:
+    // - Due now or in the past, OR
+    // - Due within 24 hours (newly created tasks with 8hr window)
+    // Hide tasks snoozed beyond 24 hours
     final incomplete = incompleteTasks
-        .where((t) => t.dueDate == null || t.dueDate!.isBefore(now))
+        .where((t) {
+          if (t.dueDate == null) return true; // No deadline = show it
+          final timeUntilDue = t.dueDate!.difference(now);
+          // Show if due now/past, or within 24 hours (catch newly added tasks)
+          return timeUntilDue.inHours <= 24;
+        })
         .toList();
     return incomplete.isNotEmpty ? incomplete.last : null;
   }
@@ -52,6 +63,15 @@ class TaskProvider extends ChangeNotifier {
     if (courseId == null) return null;
     try {
       return _courses.firstWhere((c) => c.id == courseId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get a single task by ID.
+  Task? getTask(String taskId) {
+    try {
+      return _tasks.firstWhere((t) => t.id == taskId);
     } catch (e) {
       return null;
     }
@@ -99,7 +119,23 @@ class TaskProvider extends ChangeNotifier {
     return task;
   }
 
+  /// Check if a task can be completed.
+  /// Returns false if task needs micro-steps but doesn't have them.
+  bool canCompleteTask(String taskId) {
+    final task = getTask(taskId);
+    if (task == null) return false;
+
+    // If task is longer than threshold and has no micro-steps, block completion
+    if (task.estimatedMinutes > _settings.microStepThresholdMinutes &&
+        task.microSteps.isEmpty) {
+      return false;
+    }
+
+    return true;
+  }
+
   /// Mark a task as completed.
+  /// If task needs micro-steps, this will be blocked by the UI.
   Future<void> completeTask(String taskId) async {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {

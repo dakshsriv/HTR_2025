@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+//import 'package:flutter/material.dart';
 
 class Task {
   final String id;
@@ -120,12 +120,14 @@ class MicroStep {
   final String title;
   final bool isCompleted;
   final int orderIndex;
+  final int timeMinutes; // Time budget allocated to this specific step
 
   MicroStep({
     required this.id,
     required this.title,
     this.isCompleted = false,
     required this.orderIndex,
+    this.timeMinutes = 0, // Default 0, will be set during creation
   });
 
   MicroStep copyWith({
@@ -133,12 +135,14 @@ class MicroStep {
     String? title,
     bool? isCompleted,
     int? orderIndex,
+    int? timeMinutes,
   }) {
     return MicroStep(
       id: id ?? this.id,
       title: title ?? this.title,
       isCompleted: isCompleted ?? this.isCompleted,
       orderIndex: orderIndex ?? this.orderIndex,
+      timeMinutes: timeMinutes ?? this.timeMinutes,
     );
   }
 
@@ -148,6 +152,7 @@ class MicroStep {
       'title': title,
       'isCompleted': isCompleted,
       'orderIndex': orderIndex,
+      'timeMinutes': timeMinutes,
     };
   }
 
@@ -157,6 +162,7 @@ class MicroStep {
       title: json['title'],
       isCompleted: json['isCompleted'] ?? false,
       orderIndex: json['orderIndex'] ?? 0,
+      timeMinutes: json['timeMinutes'] ?? 0,
     );
   }
 }

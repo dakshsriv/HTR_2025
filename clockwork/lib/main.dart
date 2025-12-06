@@ -24,7 +24,7 @@ void main() async {
   );
 }
 
-/// Main application widget with Material Design theme.
+/// Main application widget with Material Design theme and dark mode support.
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
@@ -33,6 +33,9 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
+  bool _isDarkMode = false;
+  double _textScale = 1.0;
+
   @override
   void initState() {
     super.initState();
@@ -42,18 +45,77 @@ class _MainAppState extends State<MainApp> {
     });
   }
 
+  /// Toggle dark mode and update theme.
+  void _toggleDarkMode() {
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
+  }
+
+  /// Update text scale factor globally.
+  void _setTextScale(double scale) {
+    setState(() {
+      _textScale = scale;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final lightColorScheme = ColorScheme.fromSeed(
+      seedColor: Colors.indigo,
+      brightness: Brightness.light,
+    );
+
+    final darkColorScheme = ColorScheme.fromSeed(
+      seedColor: Colors.indigo,
+      brightness: Brightness.dark,
+    );
+
     return MaterialApp(
-      title: 'Flow Anchor',
+      title: 'Clockwork: Stop Planning, Start Doing',
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-        ),
+        brightness: Brightness.light,
+        colorScheme: lightColorScheme,
         fontFamily: 'Roboto',
+        // Improve bottom navigation bar visibility in light mode
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: lightColorScheme.surface,
+          selectedItemColor: lightColorScheme.primary,
+          unselectedItemColor: lightColorScheme.onSurfaceVariant,
+          type: BottomNavigationBarType.fixed,
+          elevation: 8,
+        ),
       ),
-      home: const HomeScreen(),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: darkColorScheme,
+        fontFamily: 'Roboto',
+        // Improve bottom navigation bar visibility in dark mode
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: darkColorScheme.surface,
+          selectedItemColor: darkColorScheme.primary,
+          unselectedItemColor: darkColorScheme.onSurfaceVariant,
+          type: BottomNavigationBarType.fixed,
+          elevation: 8,
+        ),
+      ),
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaleFactor: _textScale,
+          ),
+          child: child!,
+        );
+      },
+      home: HomeScreen(
+        onThemeToggle: _toggleDarkMode,
+        isDarkMode: _isDarkMode,
+        onTextScaleChange: _setTextScale,
+        textScale: _textScale,
+      ),
     );
   }
 }
