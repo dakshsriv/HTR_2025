@@ -161,10 +161,11 @@ class _HomeTab extends StatelessWidget {
           const SizedBox(height: 12),
           Consumer2<TaskProvider, TimerProvider>(
             builder: (context, taskProvider, timerProvider, _) {
-              final activeTaskId = timerProvider.activeTask?.id;
-              // Exclude the currently active task from upcoming tasks list
+              // Exclude either the active task (if timer running) or the next task to focus on
+              final excludeTaskId = timerProvider.activeTask?.id ?? taskProvider.nextActiveTask?.id;
+              // Exclude the currently focused task from upcoming tasks list
               final upcomingTasks = taskProvider.incompleteTasks
-                  .where((t) => t.id != activeTaskId)
+                  .where((t) => t.id != excludeTaskId)
                   .take(5)
                   .toList();
               if (upcomingTasks.isEmpty) {
@@ -230,7 +231,7 @@ class _HomeTab extends StatelessWidget {
                                   ),
                                 );
                               },
-                              child: const Text('Do this'),
+                              child: const Text('Switch Task'),
                             ),
                           ),
                           Padding(

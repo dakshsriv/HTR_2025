@@ -23,9 +23,10 @@ class RightNowDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TaskProvider>(
-      builder: (context, taskProvider, _) {
-        final nextTask = taskProvider.nextActiveTask;
+    return Consumer2<TaskProvider, TimerProvider>(
+      builder: (context, taskProvider, timerProvider, _) {
+        // If a task is being worked on (active timer), show that. Otherwise show nextActiveTask
+        final nextTask = timerProvider.activeTask ?? taskProvider.nextActiveTask;
 
         if (nextTask == null) {
           return _buildEmptyState(context);

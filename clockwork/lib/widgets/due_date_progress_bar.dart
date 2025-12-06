@@ -53,6 +53,12 @@ class DueDateProgressBar extends StatelessWidget {
     // If task is overdue, show 100% red
     final isOverdue = remainingDuration.isNegative;
 
+    // Show minimum 3% red to prevent all-green bar when task just created
+    final displayPercentageUsed = percentageUsed > 0 && percentageUsed < 3 ? 3.0 : percentageUsed;
+
+    // Indicate abundance of time (>90% remaining)
+    final hasPlentyOfTime = percentageUsed < 10;
+
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),
       child: Column(
@@ -71,7 +77,7 @@ class DueDateProgressBar extends StatelessWidget {
                   ),
                   // Foreground (red = elapsed time)
                   FractionallySizedBox(
-                    widthFactor: percentageUsed / 100,
+                    widthFactor: displayPercentageUsed / 100,
                     child: Container(
                       color: isOverdue ? Colors.red.shade600 : Colors.red.shade500,
                     ),
@@ -81,12 +87,25 @@ class DueDateProgressBar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            'Time remaining: ${_formatTimeRemaining(remainingDuration)}',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: isOverdue ? Colors.red.shade600 : Colors.grey.shade600,
-              fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Time remaining: ${_formatTimeRemaining(remainingDuration)}',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: isOverdue ? Colors.red.shade600 : Colors.grey.shade600,
+                  fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+              if (hasPlentyOfTime)
+                Text(
+                  '✓ Plenty of time',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.green.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+            ],
           ),
         ],
       ),

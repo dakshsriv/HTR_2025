@@ -177,10 +177,29 @@ class TimerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Skip current step and move to next
+  /// Skip current step and move to next actual step (skipping any break)
   void skipStep() {
     if (!hasMicrosteps) return;
-    _currentStepIndex++;
+
+    // Calculate the next step index (skip breaks)
+    int nextStepIndex;
+
+    if (_currentStepIndex % 2 == 0) {
+      // Currently on a step (even index), go to next step, skipping the break
+      nextStepIndex = _currentStepIndex + 2;
+    } else {
+      // Currently on a break (odd index), go to next step
+      nextStepIndex = _currentStepIndex + 1;
+    }
+
+    // Check if next step is a valid step index (even numbers are steps)
+    if (nextStepIndex >= _activeTask!.microSteps.length * 2) {
+      // Past all steps and breaks, task is complete
+      _completeTask(onTime: !isOvertime);
+      return;
+    }
+
+    _currentStepIndex = nextStepIndex;
     _currentStepDuration = Duration.zero;
     notifyListeners();
   }

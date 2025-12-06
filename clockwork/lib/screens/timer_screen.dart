@@ -7,6 +7,7 @@ import '../providers/timer_provider.dart';
 import '../providers/analytics_provider.dart';
 import '../services/preferences_service.dart';
 import '../widgets/timer_dial.dart';
+import '../widgets/celebration_animation.dart';
 
 /// Timer screen for focused task work.
 /// Displays dual timers (task total + microstep) or single timer depending on task.
@@ -304,15 +305,29 @@ class _TimerScreenState extends State<TimerScreen> {
 
     timerProvider.clearTimer();
     if (mounted) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            timerProvider.isOvertime
-                ? '✓ Task completed! (+${timerProvider.overtime.inMinutes}m overtime)'
-                : '✓ Task completed on time! Great work!',
+      // Show celebration animation
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: CelebrationAnimation(
+            onComplete: () {
+              Navigator.of(context).pop(); // Close celebration
+              Navigator.of(context).pop(); // Close timer screen
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    timerProvider.isOvertime
+                        ? '✓ Task completed! (+${timerProvider.overtime.inMinutes}m overtime)'
+                        : '✓ Task completed on time! Great work!',
+                  ),
+                  duration: const Duration(milliseconds: 1500),
+                ),
+              );
+            },
           ),
-          duration: const Duration(milliseconds: 1500),
         ),
       );
     }
