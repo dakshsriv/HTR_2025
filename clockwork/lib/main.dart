@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/preferences_service.dart';
 import 'providers/task_provider.dart';
+import 'providers/timer_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
@@ -17,6 +18,9 @@ void main() async {
         Provider<PreferencesService>(create: (_) => prefsService),
         ChangeNotifierProvider<TaskProvider>(
           create: (_) => TaskProvider(prefsService: prefsService),
+        ),
+        ChangeNotifierProvider<TimerProvider>(
+          create: (_) => TimerProvider(),
         ),
       ],
       child: const MainApp(),

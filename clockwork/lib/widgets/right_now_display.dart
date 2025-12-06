@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
+import '../providers/timer_provider.dart';
 import '../models/task.dart';
 import 'snooze_dialog.dart';
 import 'time_remaining_dial.dart';
 import 'micro_step_dialog.dart';
+import '../screens/timer_screen.dart';
 
 /// Right Now Display - Shows the single most important task.
 ///
@@ -288,32 +290,21 @@ class RightNowDisplay extends StatelessWidget {
                 // Action buttons
                 Row(
                   children: [
-                    // Complete button (or prompt for micro-steps)
+                    // Start Task button (launch timer)
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.check),
-                        label: const Text('Done'),
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text('Start Task'),
                         onPressed: () {
-                          // If task needs micro-steps, show dialog instead
-                          if (nextTask.estimatedMinutes > 45 &&
-                              nextTask.microSteps.isEmpty) {
-                            showDialog(
-                              context: context,
-                              builder: (context) => MicroStepDialog(
-                                task: nextTask,
-                                taskProvider: taskProvider,
-                              ),
-                            );
-                          } else {
-                            taskProvider.completeTask(nextTask.id);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('✓ Great work!'),
-                                duration: Duration(milliseconds: 1200),
-                              ),
-                            );
-                          }
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => TimerScreen(task: nextTask),
+                            ),
+                          );
                         },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),

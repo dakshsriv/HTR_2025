@@ -28,7 +28,7 @@ class MicroStepDialog extends StatefulWidget {
 class _MicroStepDialogState extends State<MicroStepDialog> {
   late List<TextEditingController> _stepTitleControllers;
   late List<TextEditingController> _stepTimeControllers;
-  int _selectedStepCount = 3; // Default to 3 steps
+  int _selectedStepCount = 0; // No default selection
   bool _stepCountSelected = false;
   int? _lockedStepIndex; // Tracks which step slider is locked (for UI feedback)
 
@@ -208,7 +208,8 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
       0,
       (sum, controller) => sum + (int.tryParse(controller.text.trim()) ?? 0),
     );
-    final isTimeBalanced = totalAllocated == availableWorkTime;
+    final unallocatedTime = availableWorkTime - totalAllocated;
+    final isTimeExceeded = totalAllocated > availableWorkTime;
 
     return AlertDialog(
       title: const Text('Name Your Steps & Adjust Time'),
@@ -220,9 +221,11 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isTimeBalanced ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                color: isTimeExceeded
+                    ? Colors.red.withOpacity(0.1)
+                    : Colors.green.withOpacity(0.1),
                 border: Border.all(
-                  color: isTimeBalanced ? Colors.green : Colors.orange,
+                  color: isTimeExceeded ? Colors.red : Colors.green,
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(8),
@@ -242,7 +245,7 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
                       Text(
                         '$totalAllocated / $availableWorkTime min',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: isTimeBalanced ? Colors.green : Colors.orange,
+                              color: isTimeExceeded ? Colors.red : Colors.green,
                               fontWeight: FontWeight.w600,
                             ),
                       ),
@@ -255,6 +258,17 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
                           color: Colors.grey.shade600,
                         ),
                   ),
+                  if (unallocatedTime > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'Unallocated: $unallocatedTime min',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Colors.grey.shade500,
+                              fontStyle: FontStyle.italic,
+                            ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -270,21 +284,19 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
               final timeValue = int.tryParse(timeController.text.trim()) ?? 1;
               final safeTimeValue = timeValue < 1 ? 1 : timeValue;
 
-              // Calculate time already allocated by other steps
-              int otherStepsTime = 0;
+              // Fixed max for this step (independent, doesn't change when others move):
+              // 2 * (total task time - break time) / # of subtasks
+              final maxForThisStep = (2 * availableWorkTime ~/ _stepTitleControllers.length).clamp(1, availableWorkTime);
+
+              // Check if slider is locked (at its maximum)
+              final isLocked = safeTimeValue >= maxForThisStep;
+
+              // Check if current total WOULD exceed budget if we increased this slider
+              int currentTotal = 0;
               for (int i = 0; i < _stepTimeControllers.length; i++) {
-                if (i != index) {
-                  otherStepsTime += int.tryParse(_stepTimeControllers[i].text.trim()) ?? 0;
-                }
+                currentTotal += int.tryParse(_stepTimeControllers[i].text.trim()) ?? 0;
               }
-
-              // Max for this step: up to 2x average, but can't exceed remaining budget
-              final maxAverage = (2 * availableWorkTime ~/ _stepTitleControllers.length).clamp(1, availableWorkTime);
-              final remainingBudget = availableWorkTime - otherStepsTime;
-              final maxForThisStep = maxAverage.clamp(1, remainingBudget);
-
-              // Check if slider is locked (can't increase without exceeding budget)
-              final isLocked = safeTimeValue >= remainingBudget;
+              final wouldExceedBudget = (currentTotal - safeTimeValue + maxForThisStep) > availableWorkTime;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -321,7 +333,27 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
                                 onChanged: (value) {
                                   setState(() {
                                     final capped = value.toInt().clamp(1, maxForThisStep);
-                                    timeController.text = capped.toString();
+
+                                    // Calculate what total would be if we set this to capped value
+                                    int projectedTotal = currentTotal - safeTimeValue + capped;
+
+                                    // If it would exceed budget, cap it and show lock message
+                                    int finalValue = capped;
+                                    if (projectedTotal > availableWorkTime) {
+                                      finalValue = availableWorkTime - (currentTotal - safeTimeValue);
+                                      finalValue = finalValue.clamp(1, maxForThisStep);
+                                      _lockedStepIndex = index;
+                                      // Clear the lock message after 2 seconds
+                                      Future.delayed(const Duration(seconds: 2), () {
+                                        if (mounted && _lockedStepIndex == index) {
+                                          setState(() {
+                                            _lockedStepIndex = null;
+                                          });
+                                        }
+                                      });
+                                    }
+
+                                    timeController.text = finalValue.toString();
                                   });
                                 },
                               ),
@@ -330,13 +362,13 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: isLocked ? Colors.red.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                                color: Colors.blue.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 '$safeTimeValue min',
                                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                      color: isLocked ? Colors.red.shade700 : Colors.blue.shade700,
+                                      color: Colors.blue.shade700,
                                       fontWeight: FontWeight.w600,
                                     ),
                               ),
@@ -344,12 +376,12 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
                           ],
                         ),
 
-                        // Lock message (non-intrusive)
-                        if (isLocked)
+                        // Lock message (shows only when user tries to increase past budget)
+                        if (_lockedStepIndex == index)
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              'This step uses all remaining time',
+                              'Can\'t increase further—need to reduce another step',
                               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: Colors.red.shade600,
                                     fontSize: 11,
@@ -375,7 +407,7 @@ class _MicroStepDialogState extends State<MicroStepDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: isTimeBalanced ? _submitSteps : null,
+          onPressed: !isTimeExceeded ? _submitSteps : null,
           child: const Text('Create Steps'),
         ),
       ],
